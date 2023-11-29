@@ -100,26 +100,39 @@ runcmd(struct cmd *cmd)
 
   case PIPE:
     pcmd = (struct pipecmd*)cmd;
-    if(pipe(p) < 0)
+
+    // Create a pipe with two file descriptors: p[0] for reading, p[1] for writing
+    if (pipe(p) < 0)
       panic("pipe");
-    if(fork1() == 0){
-      close(1);
-      dup(p[1]);
-      close(p[0]);
-      close(p[1]);
-      runcmd(pcmd->left);
+
+    // Fork the first child process (child 1)
+    if (fork1() == 0) {
+        // Child 1: Writing to the pipe
+        close(1);         // Close standard output (file descriptor 1)
+        dup(p[1]);        // Redirect standard output to the write end of the pipe
+        close(p[0]);      // Close the read end of the pipe (not needed)
+        close(p[1]);      // Close the write end of the pipe (not needed)
+        runcmd(pcmd->left); // Execute the left command of the pipe
     }
-    if(fork1() == 0){
-      close(0);
-      dup(p[0]);
-      close(p[0]);
-      close(p[1]);
-      runcmd(pcmd->right);
+
+    // Fork the second child process (child 2)
+    if (fork1() == 0) {
+        // Child 2: Reading from the pipe
+        close(0);         // Close standard input (file descriptor 0)
+        dup(p[0]);        // Redirect standard input to the read end of the pipe
+        close(p[0]);      // Close the read end of the pipe (not needed)
+        close(p[1]);      // Close the write end of the pipe (not needed)
+        runcmd(pcmd->right); // Execute the right command of the pipe
     }
+
+    // Close both ends of the pipe in the parent process
     close(p[0]);
     close(p[1]);
+
+    // Wait for both child processes to complete
     wait(0);
     wait(0);
+
     break;
 
   case BACK:
