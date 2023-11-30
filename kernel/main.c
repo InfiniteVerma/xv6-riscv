@@ -8,6 +8,7 @@
 // volatile -> used for synchronization by multiple cores
 volatile static int started = 0;
 
+// entry.S -> start() of start.c -> main() of main.c
 // start() jumps here in supervisor mode on all CPUs.
 void
 main()

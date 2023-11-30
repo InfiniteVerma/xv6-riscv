@@ -20,6 +20,7 @@ main(void)
     mknod("console", CONSOLE, 0);
     open("console", O_RDWR);
   }
+  // pointing 0/1/2 (input/output/err) all to console file
   dup(0);  // stdout
   dup(0);  // stderr
 
